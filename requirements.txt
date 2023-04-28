@@ -1,0 +1,13 @@
+jsonlib
+pybase64
+random2
+cryptography
+getpass4
+os-sys
+threaded
+cdifflib
+pyperclip
+time
+inputimeout
+keyboard
+sys
