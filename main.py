@@ -87,12 +87,11 @@ def main():
     # RUN PROGRAM
     # Check if vault exists
     try:
-        file = open("password_vault.mmf", "r+")
+        file = open("password_database.mmf", "r+")
         file.close()
     except:
         # If failed to open
-        print(vaultImg)
-        print("\nVAULT SETUP\n\nCould not find password_vault.mmf in local directory, continuing to vault setup.")
+        os.system("cls" if os.name == "nt" else "clear")
         print(vaultSetup())
 
 
@@ -101,13 +100,17 @@ def main():
     print(lockImg)
     hashed_pass = False
     cSALT, cVERIFIER, dataBase = readFiles()
+    time_wait=2
     while not hashed_pass:
         entered_pass = getpass.getpass("Enter Master Key: ")
         hashed_pass = verify_password(
             entered_pass, cSALT, cVERIFIER
         )  # Require password to be entered
         if not hashed_pass:
-            print("Incorrect master password. Try again.\n")
+            print("Incorrect master password. Try again after {} seconds.\n".format(time_wait))
+            time.sleep(time_wait)
+            time_wait=time_wait*2
+
     if hashed_pass:
         del entered_pass
         pwd_manager_main_loop(hashed_pass, dataBase)
@@ -194,7 +197,7 @@ def ui_run():
 def changeMasterPwd(hashed_pass, db):
     # CHANGE MASTER PASSWORD
     displayHeader("CHANGE MASTER PASSWORD")
-    password_provided = timeoutInput("What would you like your master password to be (type and submit (.c) to cancel)? ")
+    password_provided = getpass.getpass("What would you like your master password to be (type and submit (.c) to cancel)? ")
     if password_provided != ".c" and password_provided != "" and password_provided != " " and password_provided != timeoutGlobalCode:
         password = password_provided.encode()  # Convert to type bytes
         salt = os.urandom(random.randint(16, 256))
@@ -253,8 +256,6 @@ def changeMasterPwd(hashed_pass, db):
             os.system("cls" if os.name == "nt" else "clear")
             print("Master password changed successfully! Log in again to access the password manager.")
             timeoutInput("\nPress enter to logout..")
-            os.system("cls" if os.name == "nt" else "clear")
-            timedOut = True
             return True
         except:
             print("Could not change master password (Error code: 01)")
@@ -282,7 +283,7 @@ def addNewProfile(hashed_pass, db):
     if add_domain != ".c" and add_domain != timeoutGlobalCode:
         add_user = timeoutInput("Username: ")
     if add_user != ".c" and add_user != timeoutGlobalCode: 
-        add_password = timeoutInput("Password: ")
+        add_password = getpass.getpass("Password: ")
     if add_domain != ".c" and add_domain != timeoutGlobalCode and add_user != timeoutGlobalCode and add_password != timeoutGlobalCode:
         db[add_domain] = {
             "username": str(encrypt_data(add_user, hashed_pass).decode("utf-8")),
@@ -511,7 +512,7 @@ def generatePwd(hashed_pass, db):
         try:
             if int(pass_length) < 6:
                 pass_length = str(12)
-                print("\nPasswords must be at least 6 characters long.")
+                print("\nPasswords must be at least 6 characters long. A Random 12 character long password has been generated.")
             print(copyToClipboard(str(generate_password(int(pass_length)))))
             userContinue = timeoutInput("\nPress enter to return to menu...")
             if userContinue != timeoutGlobalCode:
@@ -546,7 +547,7 @@ def readFiles():
         readfile.close()
     cVERIFIER = content2
 
-    file_path = "password_vault.mmf"
+    file_path = "password_database.mmf"
     file = open(file_path, "rb")
     content3 = file.read()
     dataBase = content3
@@ -656,7 +657,13 @@ def verify_password(password_provided, cSALT, cVERIFIER):
         return False
 
 def vaultSetup():
-    password_provided = getpass.getpass("What would you like your master password to be? ")
+    pas_len =0
+    while pas_len<12 :
+        os.system("cls" if os.name == "nt" else "clear")
+        print(vaultImg)
+        print("\nVAULT SETUP\n\nCould not find password_database.mmf in local directory, continuing to vault setup.")
+        password_provided = getpass.getpass("What would you like your master password to be? (Minimum length:12 characters)  ")
+        pas_len = len(password_provided)
     password = password_provided.encode() # Convert to type bytes
     salt = os.urandom(32)
     kdf = Scrypt(
@@ -677,7 +684,7 @@ def vaultSetup():
     file.write(encrypt_data("entered_master_correct",hashed_entered_pass))
     file.close()
 
-    file = open("password_vault.mmf", "w+")
+    file = open("password_database.mmf", "w+")
     file.write(str(encrypt_data("{}",hashed_entered_pass).decode('utf-8')))
     file.close()
     del hashed_entered_pass
@@ -686,7 +693,7 @@ def vaultSetup():
     
 # PROFILE OPERATIONS
 def overwrite_db(new_contents):
-    file = open("password_vault.mmf", "w+")
+    file = open("password_database.mmf", "w+")
     file.write(new_contents)
     file.close()
 
